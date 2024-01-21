@@ -1,0 +1,66 @@
+import tkinter as tk
+from tkinter import messagebox, simpledialog, Label, PhotoImage, Frame
+import requests
+import urllib.parse
+
+def fetch_weather():
+    city = simpledialog.askstring("Input", "Enter city name:", parent=root)
+    if city:
+        city_encoded = urllib.parse.quote(city)
+        api_key = "ENTER_YOUR_API_KEY"
+        url = f'http://api.openweathermap.org/data/2.5/weather?q={city_encoded}&appid={api_key}&units=metric'
+        try:
+            response = requests.get(url)
+            weather_data = response.json()
+
+            if weather_data.get('cod') != 200:
+                messagebox.showerror('Error', 'Cannot find city')
+                return
+
+            display_weather_info(weather_data, city)
+        except requests.exceptions.RequestException as e:
+            messagebox.showerror('Error', f'An error occurred: {e}')
+
+def display_weather_info(weather_data, city):
+    # Convert temperature from Celsius to Fahrenheit
+    temperature_celsius = weather_data['main']['temp']
+    temperature_fahrenheit = (temperature_celsius * 9/5) + 32
+
+    description = weather_data['weather'][0]['description']
+    humidity = weather_data['main']['humidity']
+    wind_speed = weather_data['wind']['speed']
+    country = weather_data['sys']['country']
+
+    weather_info_text = f'City: {city}, {country}\n' \
+                        f'Temperature: {temperature_fahrenheit:.1f}°F\n' \
+                        f'Description: {description.capitalize()}\n' \
+                        f'Humidity: {humidity}%\n' \
+                        f'Wind Speed: {wind_speed} m/s'
+
+    weather_info_label.config(text=weather_info_text)
+    weather_info_frame.place(relwidth=0.5, relheight=0.4, relx=0.5, rely=0.5, anchor='center')
+
+
+def set_background(window, image_path):
+    bg_photo = PhotoImage(file=image_path)
+    bg_label = Label(window, image=bg_photo)
+    bg_label.place(x=0, y=0, relwidth=1, relheight=1)
+    bg_label.image = bg_photo
+
+root = tk.Tk()
+root.title("Weather App")
+root.geometry("800x600")
+
+set_background(root, 'websitebg2.png')
+
+# Frame for weather data (initially not placed)
+weather_info_frame = Frame(root, bg="white", bd=2, relief="groove")
+
+# Weather data label with a professional font
+weather_info_label = tk.Label(weather_info_frame, bg="white", justify=tk.LEFT, wraplength=350, font=("Helvetica", 14))
+weather_info_label.pack(expand=True, padx=10, pady=10)
+
+fetch_button = tk.Button(root, text="Get Weather", command=fetch_weather)
+fetch_button.place(relx=0.5, rely=0.05, anchor='center')
+
+root.mainloop()
